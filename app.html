@@ -633,6 +633,19 @@ tbody tr:hover td{background:var(--bg);}
       <div class="fgp"><label class="flbl">Name</label><input class="fi" id="stN" placeholder="Dein Name"></div>
       <div class="fgp"><label class="flbl">Beruf / Firma</label><input class="fi" id="stB" placeholder="Beruf oder Firma"></div>
       <div class="fgp full">
+        <label class="flbl">Land / MwSt-Sätze</label>
+        <select class="fi" id="stLand" onchange="applyLandSet(this.value)">
+          <option value="de">🇩🇪 Deutschland (0%, 7%, 19%)</option>
+          <option value="at">🇦🇹 Österreich (0%, 10%, 13%, 20%)</option>
+          <option value="ch">🇨🇭 Schweiz (0%, 2,6%, 3,8%, 8,1%)</option>
+          <option value="custom">⚙️ Benutzerdefiniert</option>
+        </select>
+        <div id="customRatesSet" style="display:none;margin-top:8px;background:var(--bg);border-radius:var(--r);padding:12px;font-size:13px;">
+          <div style="margin-bottom:6px;color:var(--tx2);">Eigene Sätze eingeben (kommagetrennt, z.B. <strong>0,5,12,21</strong>):</div>
+          <input class="fi" id="customRateInputSet" placeholder="0,5,12,21" style="font-size:13px;">
+        </div>
+      </div>
+      <div class="fgp full">
         <label class="flbl">Claude API-Key</label>
         <div style="display:flex;gap:8px;">
           <input class="fi" id="stK" placeholder="..." type="password" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
@@ -985,16 +998,35 @@ function openSet(){
   document.getElementById('stN').value=localStorage.getItem('bp_n')||'';
   document.getElementById('stB').value=localStorage.getItem('bp_b')||'';
   document.getElementById('stK').value=localStorage.getItem('bp_k')||'';
+  const land=localStorage.getItem('bp_land')||'de';
+  const sel=document.getElementById('stLand');
+  if(sel)sel.value=land;
+  const cr=document.getElementById('customRatesSet');
+  if(cr)cr.style.display=land==='custom'?'block':'none';
+  const cri=document.getElementById('customRateInputSet');
+  if(cri)cri.value=localStorage.getItem('bp_custom_rates')||'';
   document.getElementById('mSet').classList.add('open');
+}
+function applyLandSet(land){
+  const cr=document.getElementById('customRatesSet');
+  if(cr)cr.style.display=land==='custom'?'block':'none';
 }
 function savSet(){
   const name=document.getElementById('stN').value.trim();
   const beruf=document.getElementById('stB').value.trim();
   const key=document.getElementById('stK').value.trim();
+  const land=document.getElementById('stLand')?.value||'de';
   if(key&&!key.startsWith('sk-ant-')){showAlert('Der API-Key scheint ungültig zu sein. Er muss mit "sk-ant-" beginnen.','rd');return;}
   if(name)localStorage.setItem('bp_n',name);
   if(beruf)localStorage.setItem('bp_b',beruf);
   if(key)localStorage.setItem('bp_k',key);
+  // Land & MwSt speichern und sofort anwenden
+  applyLand(land);
+  if(land==='custom'){
+    const raw=document.getElementById('customRateInputSet')?.value||'';
+    if(raw)localStorage.setItem('bp_custom_rates',raw);
+    applyCustomRates(raw);
+  }
   applyUser(name||localStorage.getItem('bp_n')||'Handwerker',beruf,key||localStorage.getItem('bp_k')||'');
   closeOv('mSet');showAlert('Einstellungen gespeichert!','gn');
 }
