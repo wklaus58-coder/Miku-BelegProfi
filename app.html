@@ -261,7 +261,7 @@ function buildXlsx(rows2d, colWidths, boldRows) {
         return `<c r="${addr}" t="s" s="${styleIdx}"><v>${idx}</v></c>`;
       }
     });
-    const rowH = isHeader ? ` ht="18" customHeight="1"` : isSumme ? ` ht="18" customHeight="1"` : ` ht="16" customHeight="1"`;
+    const rowH = isHeader ? ` ht="22" customHeight="1"` : isSumme ? ` ht="20" customHeight="1"` : ` ht="18" customHeight="1"`;
     return `<row r="${ri+1}"${rowH}>${cells.join('')}</row>`;
   });
 
@@ -290,20 +290,22 @@ function buildXlsx(rows2d, colWidths, boldRows) {
 ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
 </sst>`;
 
-  // Professional styles: font 11pt Calibri throughout, header=dark blue/white/bold, summe=gold/bold, borders everywhere
+  // Professional styles: 12pt Calibri data, 13pt bold header, currency € format, gold SUMME, blue header
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1">
+<numFmt numFmtId="164" formatCode="#,##0.00\ &quot;€&quot;"/>
+</numFmts>
 <fonts count="3">
-<font><sz val="11"/><name val="Calibri"/><color rgb="FF333333"/></font>
-<font><b/><sz val="11"/><name val="Calibri"/><color rgb="FFFFFFFF"/></font>
-<font><b/><sz val="11"/><name val="Calibri"/><color rgb="FF1A1A1A"/></font>
+<font><sz val="12"/><name val="Calibri"/><color rgb="FF1A1A1A"/></font>
+<font><b/><sz val="13"/><name val="Calibri"/><color rgb="FFFFFFFF"/></font>
+<font><b/><sz val="12"/><name val="Calibri"/><color rgb="FF1A1A1A"/></font>
 </fonts>
-<fills count="5">
+<fills count="4">
 <fill><patternFill patternType="none"/></fill>
 <fill><patternFill patternType="gray125"/></fill>
 <fill><patternFill patternType="solid"><fgColor rgb="FF1B3A6B"/></patternFill></fill>
 <fill><patternFill patternType="solid"><fgColor rgb="FFFFC000"/></patternFill></fill>
-<fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/></patternFill></fill>
 </fills>
 <borders count="2">
 <border><left/><right/><top/><bottom/><diagonal/></border>
@@ -316,14 +318,12 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
 </border>
 </borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="7">
+<cellXfs count="5">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>
-<xf numFmtId="4" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyNumberFormat="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyNumberFormat="1"><alignment horizontal="right" vertical="center"/></xf>
 <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
-<xf numFmtId="4" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="164" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"><alignment horizontal="right" vertical="center"/></xf>
 <xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>
-<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>
-<xf numFmtId="4" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyNumberFormat="1"><alignment horizontal="right" vertical="center"/></xf>
 </cellXfs>
 </styleSheet>`;
 
@@ -967,29 +967,24 @@ function doExp(type){
   // Spalten nach Land-Einstellung — nicht nach vorhandenen Daten
   const landRateMap={de:[0,7,19],at:[0,10,13,20],ch:[0,2.6,3.8,8.1]};
   const rates=landRateMap[currentLand]||[...allRates].sort((a,b)=>a-b);
-  const h=['Datum','Bank/Bar','Belegart','Name','Buchungstext'];
+  const h=['Datum','Bank/Bar','Belegart','Name'];
   rates.forEach(v=>{const lbl=v+'%';h.push('Brutto '+lbl,'Netto '+lbl,'MwSt '+lbl);});
-  h.push('Brutto Gesamt','Netto Gesamt');
   const rows=allData.map(r=>{
     const zahl=r.zahl||(r.art==='Bar'?'Bar':'Bank');
-    const row=[r.dat,zahl.charAt(0).toUpperCase()+zahl.slice(1),r.art,r.nm,r.bucht||''];
+    const row=[r.dat,zahl.charAt(0).toUpperCase()+zahl.slice(1),r.art,r.nm];
     rates.forEach(v=>{
       if(r.mwst===v){row.push(+(r.brutto.toFixed(2)),+(r.netto.toFixed(2)),+((r.brutto-r.netto).toFixed(2)));}
       else{row.push('','','');}
     });
-    row.push(+(r.brutto.toFixed(2)),+(r.netto.toFixed(2)));
     return row;
   });
-  const sumRow=['SUMME','','','',''];
+  const sumRow=['SUMME','','',''];
   rates.forEach(v=>{
     const rr=allData.filter(r=>r.mwst===v);
     const sB=+rr.reduce((s,r)=>s+r.brutto,0).toFixed(2);
     const sN=+rr.reduce((s,r)=>s+r.netto,0).toFixed(2);
     sumRow.push(sB,sN,+((sB-sN).toFixed(2)));
   });
-  const totB=+allData.reduce((s,r)=>s+r.brutto,0).toFixed(2);
-  const totN=+allData.reduce((s,r)=>s+r.netto,0).toFixed(2);
-  sumRow.push(totB,totN);
   // Spaltenbreiten berechnen
   const allRows=[h,...rows,sumRow];
   const colW=h.map((_,ci)=>{
