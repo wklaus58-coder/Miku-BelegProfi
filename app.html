@@ -962,10 +962,10 @@ function doExp(type){
   const allRates=new Set();
   const allData=[];
   D.ein.forEach(r=>{if(type==='alle'||type==='ein'||(type==='ausl'&&r.herk!=='inland')){allRates.add(r.mwst);allData.push({...r,art:'Eingang',nm:r.lief,netto:r.netto});}});
-  D.aus.forEach(r=>{if(type==='alle'||type==='aus'){allRates.add(r.mwst);allData.push({...r,art:'Ausgang',nm:r.kund,netto:r.netto});}});
+  D.aus.forEach(r=>{if(type==='alle'||type==='aus'){allRates.add(r.mwst);const nm=(r.kund||'').split(',')[0].trim();allData.push({...r,art:'Ausgang',nm,netto:r.netto});}});
   D.bar.forEach(r=>{if(type==='alle'){const n=+(r.brutto/(1+r.mwst/100)).toFixed(2);allRates.add(r.mwst);allData.push({...r,art:'Bar',nm:r.haend,netto:n});}});
   // Spalten nach Land-Einstellung — nicht nach vorhandenen Daten
-  const landRateMap={de:[0,7,19],at:[0,10,13,20],ch:[0,2.6,3.8,8.1]};
+  const landRateMap={de:[0,7,19],at:[0,10,20],ch:[0,2.6,3.8,8.1]};
   const rates=landRateMap[currentLand]||[...allRates].sort((a,b)=>a-b);
   const h=['Datum','Bank/Bar','Belegart','Name'];
   rates.forEach(v=>{const lbl=v+'%';h.push('Brutto '+lbl,'Netto '+lbl,'MwSt '+lbl);});
@@ -1031,15 +1031,23 @@ async function processFile(file,type){
   const isPdf=file.type==='application/pdf',isImg=file.type.startsWith('image/');
   if(!isPdf&&!isImg){document.getElementById('procBar').style.display='none';showAlert('Nur PDF oder Bild-Dateien (JPG, PNG).','am');return;}
   const ci=isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'image',source:{type:'base64',media_type:file.type,data:b64}};
+  const mwstHint={de:'Erlaubte MwSt-Sätze: 0, 7, 19',at:'Erlaubte MwSt-Sätze: 0, 10, 13, 20',ch:'Erlaubte MwSt-Sätze: 0, 2.6, 3.8, 8.1'};
+  const mwstDef={de:19,at:20,ch:8.1};
+  const mwstInfo=mwstHint[currentLand]||mwstHint.de;
+  const mwstStd=mwstDef[currentLand]||19;
   const prompts={
     ein:`Lies diese Eingangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","lief":"Lieferant","desc":"max 60 Zeichen","herk":"inland","netto":0.00,"mwst":19,"brutto":0.00,"kat":"Material & Waren","hint":""}
-herk: inland=Deutschland, eu=EU-Ausland, drittland=China/USA/UK etc. Bei eu/drittland: mwst=0, hint=Steuerhinweis.
+{"dat":"TT.MM.JJJJ","lief":"Lieferant","desc":"max 60 Zeichen","herk":"inland","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren","hint":""}
+herk: inland=Inland, eu=EU-Ausland, drittland=China/USA/UK etc. Bei eu/drittland: mwst=0, hint=Steuerhinweis.
+${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!
 kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Sonstiges`,
     aus:`Lies diese Ausgangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","kund":"Kunde","desc":"Beschreibung","rech":"Rechnungsnr","netto":0.00,"mwst":19,"brutto":0.00,"stat":"offen"}`,
+{"dat":"TT.MM.JJJJ","kund":"Kunde","desc":"Beschreibung","rech":"Rechnungsnr","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"stat":"offen"}
+WICHTIG: kund = der EMPFÄNGER der Rechnung (die Firma/Person AN DIE die Rechnung geht). NICHT der Aussteller.
+${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!`,
     bar:`Lies diesen Kassenbon aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","haend":"Händler","desc":"Was wurde gekauft","mwst":19,"brutto":0.00,"kat":"Material & Waren"}
+{"dat":"TT.MM.JJJJ","haend":"Händler","desc":"Was wurde gekauft","mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren"}
+${mwstInfo}. Lies den tatsächlichen MwSt-Satz vom Bon!
 kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Verpflegung, Sonstiges`
   };
   try{
