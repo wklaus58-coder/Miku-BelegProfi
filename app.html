@@ -205,6 +205,7 @@ tbody tr:hover td{background:var(--bg);}
 #prvAccept.active{background:#1B4FD8;cursor:pointer;}
 #prvAccept.active:hover{background:#1640b0;}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -793,53 +794,63 @@ function rExp(){
   document.getElementById('expTb').innerHTML=rows.map(r=>`<tr><td class="mono">${r.dat}</td><td><span class="badge ${r.art==='Eingang'?'b-bl':r.art==='Ausgang'?'b-gn':'b-gr'}">${r.art}</span></td><td class="bold">${r.nm}</td><td class="mono">${f2(r.netto)}</td><td>${r.mwst}%</td><td class="mono">${f2(r.brutto)}</td><td>${hB(r.herk)}</td><td>${kB(r.kat)}</td><td class="muted" style="font-size:11px">${r.hint||'—'}</td></tr>`).join('');
 }
 function doExp(type){
-  // Alle MwSt-Sätze aus aktuellen Daten ermitteln
-  const land=localStorage.getItem('bp_land')||'de';
-  // Standard-Sätze je Land für Spalten
-  const rateMap={de:[0,7,19],at:[0,10,13,20],ch:[0,2.6,3.8,8.1]};
   const allRates=new Set();
   const allData=[];
   D.ein.forEach(r=>{if(type==='alle'||type==='ein'||(type==='ausl'&&r.herk!=='inland')){allRates.add(r.mwst);allData.push({...r,art:'Eingang',nm:r.lief,netto:r.netto});}});
   D.aus.forEach(r=>{if(type==='alle'||type==='aus'){allRates.add(r.mwst);allData.push({...r,art:'Ausgang',nm:r.kund,netto:r.netto});}});
   D.bar.forEach(r=>{if(type==='alle'){const n=+(r.brutto/(1+r.mwst/100)).toFixed(2);allRates.add(r.mwst);allData.push({...r,art:'Bar',nm:r.haend,netto:n});}});
   const rates=[...allRates].sort((a,b)=>a-b);
-  // Header aufbauen
+  // Header
   const h=['Datum','Bank/Bar','Belegart','Name','Buchungstext'];
-  rates.forEach(v=>{
-    const lbl=v+'%';
-    h.push('Brutto '+lbl,'Netto '+lbl,'MwSt '+lbl);
-  });
+  rates.forEach(v=>{const lbl=v+'%';h.push('Brutto '+lbl,'Netto '+lbl,'MwSt '+lbl);});
   h.push('Brutto Gesamt','Netto Gesamt');
-  // Zeilen aufbauen
+  // Datenzeilen (Zahlen als echte Zahlen)
   const rows=allData.map(r=>{
     const zahl=r.zahl||(r.art==='Bar'?'Bar':'Bank');
     const row=[r.dat,zahl.charAt(0).toUpperCase()+zahl.slice(1),r.art,r.nm,r.bucht||''];
-    let sumBrutto=0,sumNetto=0;
     rates.forEach(v=>{
-      if(r.mwst===v){
-        const mwstBetrag=+(r.brutto-r.netto).toFixed(2);
-        row.push(r.brutto.toFixed(2),r.netto.toFixed(2),mwstBetrag.toFixed(2));
-        sumBrutto+=r.brutto;sumNetto+=r.netto;
-      }else{row.push('','','');}
+      if(r.mwst===v){row.push(+r.brutto.toFixed(2),+r.netto.toFixed(2),+(r.brutto-r.netto).toFixed(2));}
+      else{row.push('','','');}
     });
-    row.push(r.brutto.toFixed(2),r.netto.toFixed(2));
+    row.push(+r.brutto.toFixed(2),+r.netto.toFixed(2));
     return row;
   });
   // Summenzeile
   const sumRow=['SUMME','','','',''];
   rates.forEach(v=>{
     const rr=allData.filter(r=>r.mwst===v);
-    const sB=rr.reduce((s,r)=>s+r.brutto,0);
-    const sN=rr.reduce((s,r)=>s+r.netto,0);
-    const sM=+(sB-sN).toFixed(2);
-    sumRow.push(sB.toFixed(2),sN.toFixed(2),sM.toFixed(2));
+    const sB=+rr.reduce((s,r)=>s+r.brutto,0).toFixed(2);
+    const sN=+rr.reduce((s,r)=>s+r.netto,0).toFixed(2);
+    sumRow.push(sB,sN,+(sB-sN).toFixed(2));
   });
-  const totB=allData.reduce((s,r)=>s+r.brutto,0);
-  const totN=allData.reduce((s,r)=>s+r.netto,0);
-  sumRow.push(totB.toFixed(2),totN.toFixed(2));
-  const csv=[h,...rows,sumRow].map(r=>r.join(';')).join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`MIKU-BelegProfi_${type}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  sumRow.push(+allData.reduce((s,r)=>s+r.brutto,0).toFixed(2),+allData.reduce((s,r)=>s+r.netto,0).toFixed(2));
+  // xlsx aufbauen
+  const wsData=[h,...rows,sumRow];
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  // AutoFilter (sortierbare Spalten)
+  ws['!autofilter']={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:0,c:h.length-1}})};
+  // Spaltenbreiten automatisch
+  const colW=h.map((hdr,ci)=>{
+    let max=hdr.length;
+    wsData.forEach(row=>{const v=row[ci]!=null?String(row[ci]):'';if(v.length>max)max=v.length;});
+    return{wch:Math.min(max+2,40)};
+  });
+  ws['!cols']=colW;
+  // Header-Zeile fett
+  h.forEach((_,ci)=>{
+    const addr=XLSX.utils.encode_cell({r:0,c:ci});
+    if(!ws[addr])ws[addr]={t:'s',v:h[ci]};
+    ws[addr].s={font:{bold:true},fill:{fgColor:{rgb:'1B4FD8'}},font:{bold:true,color:{rgb:'FFFFFF'}}};
+  });
+  // Summen-Zeile fett
+  const sumR=wsData.length-1;
+  sumRow.forEach((_,ci)=>{
+    const addr=XLSX.utils.encode_cell({r:sumR,c:ci});
+    if(ws[addr])ws[addr].s={font:{bold:true}};
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Belege',ws);
+  XLSX.writeFile(wb,`MIKU-BelegProfi_${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 // ── DRUCKEN ───────────────────────────────────────────────────────────────────
