@@ -92,6 +92,7 @@ tbody tr:hover td{background:var(--bg);}
 .b-co{background:var(--co2);color:var(--co);}
 .b-pu{background:var(--pu2);color:var(--pu);}
 .b-gr{background:#EDEAE3;color:var(--tx2);}
+.b-rd2c{background:#FEE2E2;color:#B91C1C;}
 .tabs{display:flex;background:#EDEAE3;border-radius:var(--r);padding:3px;gap:2px;}
 .tab{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;color:var(--tx2);border:none;background:none;transition:all 0.12s;font-family:'DM Sans',sans-serif;}
 .tab.active{background:var(--sur);color:var(--tx);box-shadow:var(--sh);}
@@ -737,7 +738,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <div class="fgp"><label class="flbl">Mehrwertsteuer</label><div style="display:flex;gap:6px;align-items:center;"><select class="fi" id="eMw" onchange="onMwChange('eMw','eMwCustom');calcB('e')"></select><input class="fi" id="eMwCustom" type="number" min="0" max="100" step="0.1" placeholder="%" style="width:70px;display:none;" onchange="calcB('e')"></div></div>
       <div class="fgp"><label class="flbl">Brutto (€)</label><input class="fi" id="eBr" type="number" step="0.01" placeholder="0.00"></div>
       <div class="fgp"><label class="flbl">Woher kommt die Rechnung?</label><select class="fi" id="eHk"><option value="inland">🇩🇪 Deutschland</option><option value="eu">🇪🇺 EU-Ausland</option><option value="drittland">🌍 Drittland (China, USA...)</option></select></div>
-      <div class="fgp"><label class="flbl">Kategorie</label><select class="fi" id="eKt"><option>Material &amp; Waren</option><option>Werkzeug &amp; Maschinen</option><option>Fahrzeug &amp; Transport</option><option>Büro &amp; Verwaltung</option><option>Sonstiges</option></select></div>
+      <div class="fgp"><label class="flbl">Kategorie</label><select class="fi" id="eKt"><option>Material &amp; Waren</option><option>Werkzeug &amp; Maschinen</option><option>Fahrzeug &amp; Transport</option><option>Büro &amp; Verwaltung</option><option>Überweisungen &amp; Abgaben</option><option>Sonstiges</option></select></div>
       <div class="fgp full"><label class="flbl">Buchungstext (für Steuerberater)</label><input class="fi" id="eBt" placeholder="z.B. Büro/Miete, Hosting, Handygebühr..."></div>
       <div class="fgp"><label class="flbl">Zahlungsart</label><select class="fi" id="eZa"><option value="bank">Bank</option><option value="bar">Bar</option></select></div>
     </div>
@@ -775,7 +776,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <div class="fgp full"><label class="flbl">Was wurde gekauft?</label><input class="fi" id="bDsc" placeholder="z.B. Kabelbinder, Kaffee..."></div>
       <div class="fgp"><label class="flbl">Mehrwertsteuer</label><div style="display:flex;gap:6px;align-items:center;"><select class="fi" id="bMw" onchange="onMwChange('bMw','bMwCustom')"></select><input class="fi" id="bMwCustom" type="number" min="0" max="100" step="0.1" placeholder="%" style="width:70px;display:none;"></div></div>
       <div class="fgp"><label class="flbl">Betrag (€)</label><input class="fi" id="bBr" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="fgp"><label class="flbl">Kategorie</label><select class="fi" id="bKt"><option>Material &amp; Waren</option><option>Werkzeug &amp; Maschinen</option><option>Fahrzeug &amp; Transport</option><option>Büro &amp; Verwaltung</option><option>Verpflegung</option><option>Sonstiges</option></select></div>
+      <div class="fgp"><label class="flbl">Kategorie</label><select class="fi" id="bKt"><option>Material &amp; Waren</option><option>Werkzeug &amp; Maschinen</option><option>Fahrzeug &amp; Transport</option><option>Büro &amp; Verwaltung</option><option>Verpflegung</option><option>Überweisungen &amp; Abgaben</option><option>Sonstiges</option></select></div>
       <div class="fgp full"><label class="flbl">Buchungstext (für Steuerberater)</label><input class="fi" id="bBt" placeholder="z.B. Diesel &amp; Wäsche, Büromaterial..."></div>
     </div>
     <div class="mf"><button class="btn" onclick="closeOv('mBar')">Abbrechen</button><button class="btn btn-bl" onclick="saveFrm('bar')">Eintragen</button></div>
@@ -843,7 +844,7 @@ let D={
 // ── FORMAT ────────────────────────────────────────────────────────────────────
 const f2=n=>(+n).toFixed(2).replace('.',',')+' €';
 const hB=h=>h==='eu'?'<span class="badge b-am">🇪🇺 EU-Ausland</span>':h==='drittland'?'<span class="badge b-co">🌍 Drittland</span>':'<span class="badge b-bl">🇩🇪 Inland</span>';
-const kB=k=>{const m={'Material & Waren':'b-bl','Werkzeug & Maschinen':'b-am','Fahrzeug & Transport':'b-co','Büro & Verwaltung':'b-pu','Verpflegung':'b-gn','Sonstiges':'b-gr'};return`<span class="badge ${m[k]||'b-gr'}">${k||'—'}</span>`;};
+const kB=k=>{const m={'Material & Waren':'b-bl','Werkzeug & Maschinen':'b-am','Fahrzeug & Transport':'b-co','Büro & Verwaltung':'b-pu','Verpflegung':'b-gn','Überweisungen & Abgaben':'b-rd2c','Sonstiges':'b-gr'};return`<span class="badge ${m[k]||'b-gr'}">${k||'—'}</span>`;};
 const mL=r=>r.herk==='eu'?'<span class="badge b-am">0% RC</span>':r.herk==='drittland'?'<span class="badge b-co">0% EUSt</span>':`<span style="white-space:nowrap">${r.mwst}%<br><span style="font-size:11px;color:var(--tx3)">${f2(r.brutto-r.netto)}</span></span>`;
 const stB=s=>s==='bezahlt'?'<span class="badge b-gn">✓ Bezahlt</span>':'<span class="badge b-am">Offen</span>';
 
@@ -1040,7 +1041,7 @@ async function processFile(file,type){
 {"dat":"TT.MM.JJJJ","lief":"Lieferant","desc":"max 60 Zeichen","herk":"inland","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren","hint":""}
 herk: inland=Inland, eu=EU-Ausland, drittland=China/USA/UK etc. Bei eu/drittland: mwst=0, hint=Steuerhinweis.
 ${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!
-kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Sonstiges`,
+kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Überweisungen & Abgaben, Sonstiges`,
     aus:`Lies diese Ausgangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
 {"dat":"TT.MM.JJJJ","kund":"Kunde","desc":"Beschreibung","rech":"Rechnungsnr","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"stat":"offen"}
 WICHTIG: kund = der EMPFÄNGER der Rechnung (die Firma/Person AN DIE die Rechnung geht). NICHT der Aussteller.
@@ -1048,7 +1049,7 @@ ${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!`,
     bar:`Lies diesen Kassenbon aus. Antworte NUR mit JSON ohne Backticks:
 {"dat":"TT.MM.JJJJ","haend":"Händler","desc":"Was wurde gekauft","mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren"}
 ${mwstInfo}. Lies den tatsächlichen MwSt-Satz vom Bon!
-kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Verpflegung, Sonstiges`
+kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Verpflegung, Überweisungen & Abgaben, Sonstiges`
   };
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
