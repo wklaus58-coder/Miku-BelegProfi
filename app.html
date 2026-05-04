@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MIKU-BelegProfi</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root{--bg:#F4F2ED;--sur:#FFF;--bor:rgba(0,0,0,0.09);--bor2:rgba(0,0,0,0.15);--tx:#1A1916;--tx2:#6B6860;--tx3:#A09D97;--bl:#1B4FD8;--bl2:#EBF0FF;--gn:#0F6E3A;--gn2:#E6F5EE;--am:#92520A;--am2:#FEF3E2;--rd:#B91C1C;--rd2:#FEE2E2;--co:#993C1D;--co2:#FAECE7;--pu:#5B3DB5;--pu2:#EEEDFE;--r:10px;--rl:16px;--sh:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);--shm:0 4px 16px rgba(0,0,0,0.10);}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -478,9 +480,9 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
           </label>
         </div>
         <div class="prv-check">
-          <input type="checkbox" id="prvCb2" onchange="checkPrvReady()">
-          <label for="prvCb2">Ich verstehe, dass die optionale KI-Funktion Belegdaten an Anthropic (USA) überträgt und ich dafür selbst datenschutzrechtlich verantwortlich bin.
-            <span>Pflichtfeld zur Nutzung der App.</span>
+          <input type="checkbox" id="prvCb2" onchange="checkPrvReady()" checked>
+          <label for="prvCb2">Ich verstehe, dass alle meine Belegdaten ausschließlich lokal in meinem Browser verarbeitet werden und keine Daten an externe Server übertragen werden.
+            <span>Deine Daten verlassen niemals deinen Computer.</span>
           </label>
         </div>
       </div>
@@ -526,8 +528,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
   <div class="topbar">
     <div class="ptitle" id="pgTitle">Dashboard</div>
     <div class="tright">
-      <div class="kib ki-on" id="kiOn" style="display:none"><div class="kdot"></div> KI aktiv ✓</div>
-      <div class="kib ki-off" id="kiOff" onclick="openSet()"><div class="kdot"></div> Kein API-Key — hier klicken</div>
+      <div class="kib ki-on" style="display:flex"><div class="kdot"></div> 🔒 Lokal &amp; DSGVO-sicher</div>
       <select class="fi" id="mandSel" style="width:170px;font-size:12px" onchange="rDash()">
         <option value="">Alle Mandanten</option>
       </select>
@@ -536,7 +537,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
   </div>
 
   <div class="content">
-    <div class="proc" id="procBar" style="display:none"><div class="spin"></div><span id="procTxt">KI liest Rechnung aus...</span></div>
+    <div class="proc" id="procBar" style="display:none"><div class="spin"></div><span id="procTxt">Beleg wird lokal ausgelesen...</span></div>
     <div class="alert" id="alertBox" style="display:none"><span id="alertTxt"></span></div>
 
     <!-- DASHBOARD -->
@@ -607,7 +608,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <div class="uz" id="uzE" onclick="document.getElementById('fiE').click()">
         <div class="uemoji">📄</div>
         <div class="utitle">Eingangsrechnung als PDF hier ablegen oder klicken</div>
-        <div class="usub">Nur PDF-Dateien — einzeln oder mehrere auf einmal hochladen.<br>Die KI liest Lieferant, Betrag und MwSt automatisch aus.</div>
+        <div class="usub">Nur PDF-Dateien — einzeln oder mehrere auf einmal hochladen.<br>Lieferant, Betrag und MwSt werden automatisch erkannt.</div>
         <div class="utags">
           <span class="badge b-bl">🇩🇪 Inland</span>
           <span class="badge b-am">🇪🇺 EU-Ausland</span>
@@ -647,7 +648,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <div class="uz" id="uzA" onclick="document.getElementById('fiA').click()">
         <div class="uemoji">📤</div>
         <div class="utitle">Ausgangsrechnung als PDF hier ablegen oder klicken</div>
-        <div class="usub">Nur PDF-Dateien — deine eigenen Rechnungen an Kunden.<br>Die KI liest Kunde, Betrag und Rechnungsnummer automatisch aus.</div>
+        <div class="usub">Nur PDF-Dateien — deine eigenen Rechnungen an Kunden.<br>Kunde, Betrag und Rechnungsnummer werden automatisch erkannt.</div>
       </div>
       <input type="file" id="fiA" accept=".pdf" multiple onchange="upload(event,'aus')">
       <div class="tc">
@@ -675,7 +676,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <div class="uz" id="uzB" onclick="document.getElementById('fiB').click()">
         <div class="uemoji">🧾</div>
         <div class="utitle">Kassenbon oder Quittung als PDF hier ablegen oder klicken</div>
-        <div class="usub">Nur PDF-Dateien — z.B. digitale Kassenbons, Tankquittungen, Parkscheine.<br>Die KI liest Händler, Betrag und MwSt automatisch aus.</div>
+        <div class="usub">Nur PDF-Dateien — z.B. digitale Kassenbons, Tankquittungen, Parkscheine.<br>Händler, Betrag und MwSt werden automatisch erkannt.</div>
       </div>
       <input type="file" id="fiB" accept=".pdf" multiple onchange="upload(event,'bar')">
       <div class="tc">
@@ -754,26 +755,14 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       </div>
     </div>
     <div style="margin-bottom:8px;">
-      <div class="slbl2"><div class="snum">4</div> Claude API-Key (für automatisches Auslesen)</div>
-      <div style="display:flex;gap:8px;">
-        <input class="fi" id="sKey" placeholder="..." type="password" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
-        <button class="btn btn-sm" onclick="tKey('sKey')">Zeigen</button>
-      </div>
-      <div class="aguide">
-        <strong>So bekommst du den Key:</strong><br>
-        1. <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> öffnen &amp; einloggen<br>
-        2. Links unten auf <strong>"API keys"</strong> klicken<br>
-        3. Auf <strong>"Create Key"</strong> klicken → Name eingeben → bestätigen<br>
-        4. Key kopieren und hier einfügen
-      </div>
-      <div style="background:#FEF3E2;border:2px solid #D97706;border-radius:10px;padding:14px 16px;margin-top:10px;">
-        <div style="font-size:15px;font-weight:700;color:#92400E;margin-bottom:6px;">&#x26A0; Kosten bei KI-Nutzung</div>
-        <div style="font-size:14px;color:#78350F;line-height:1.7;">Jede automatisch ausgelesene Rechnung kostet <strong>ca. 0,01–0,03 €</strong> über dein Anthropic-Konto. Die Kosten entstehen direkt bei Anthropic — nicht bei MIKU-Marketing.<br><strong>Ohne API-Key entstehen keine KI-Kosten.</strong></div>
+      <div class="aguide" style="background:var(--gn2);border:1px solid rgba(15,110,58,0.2);">
+        <strong>🔒 100% lokal &amp; kostenlos</strong><br>
+        Die App liest deine Belege direkt in deinem Browser aus — kein API-Key, keine Cloud, keine Kosten. Deine Daten verlassen niemals deinen Computer.
       </div>
     </div>
     <button class="btn btn-bl btn-lg" style="width:100%;margin-top:16px;" onclick="saveSetup()">Einrichtung abschließen →</button>
     <div style="text-align:center;margin-top:12px;">
-      <span style="font-size:12px;color:var(--tx3);cursor:pointer;text-decoration:underline;" onclick="skipSetup()">Ohne API-Key starten — ich trage alles manuell ein</span>
+      <span style="font-size:12px;color:var(--tx3);cursor:pointer;text-decoration:underline;" onclick="skipSetup()">Einrichtung überspringen — ich trage alles manuell ein</span>
     </div>
   </div>
 </div>
@@ -869,14 +858,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
           <input class="fi" id="customRateInputSet" placeholder="0,5,12,21" style="font-size:13px;">
         </div>
       </div>
-      <div class="fgp full">
-        <label class="flbl">Claude API-Key</label>
-        <div style="display:flex;gap:8px;">
-          <input class="fi" id="stK" placeholder="..." type="password" style="flex:1;font-family:'DM Mono',monospace;font-size:12px;">
-          <button class="btn btn-sm" onclick="tKey('stK')">Zeigen</button>
-        </div>
-        <div style="font-size:11px;color:var(--tx3);margin-top:4px;">console.anthropic.com → API keys → Create Key</div>
-      </div>
+
     </div>
     <div class="mf"><button class="btn" onclick="closeOv('mSet')">Abbrechen</button><button class="btn btn-bl" onclick="savSet()">Speichern</button></div><div style="margin-top:10px;"><button class="btn" style="background:#fff3f3;color:#c0392b;border:1.5px solid #e74c3c;font-size:13px;width:100%;" onclick="resetApp()">&#x21BA; Einrichtung zurücksetzen (Datenschutz &amp; Setup neu starten)</button></div>
   </div>
@@ -884,7 +866,7 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
 
 <script>
 // ── DATEN ────────────────────────────────────────────────────────────────────
-let KEY='', uid=100, dF='alle', eF='alle';
+let uid=100, dF='alle', eF='alle';
 let SS={ein:{c:'dat',d:-1},aus:{c:'dat',d:-1},bar:{c:'dat',d:-1},dash:{c:'dat',d:-1}};
 let D={
   ein:[],
@@ -1126,51 +1108,134 @@ function del(t,id){
 }
 
 // ── UPLOAD & KI ───────────────────────────────────────────────────────────────
-async function upload(e,t){[...e.target.files].forEach(f=>processFile(f,t));e.target.value='';}
+async function upload(e,t){for(const f of [...e.target.files])await processFile(f,t);e.target.value='';}
+
+// ── LOKALE OCR (PDF.js + Tesseract.js) — 100% im Browser, kein Server ────────
+async function extractTextFromFile(file){
+  const isPdf=file.type==='application/pdf';
+  if(isPdf){
+    try{
+      const buf=await file.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      let text='';
+      for(let i=1;i<=Math.min(pdf.numPages,3);i++){
+        const page=await pdf.getPage(i);
+        const content=await page.getTextContent();
+        text+=content.items.map(s=>s.str).join(' ')+' ';
+      }
+      if(text.trim().length>50)return text.trim();
+      // Fallback: Seite als Bild rendern und Tesseract nutzen
+      const page=await pdf.getPage(1);
+      const vp=page.getViewport({scale:2.0});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;canvas.height=vp.height;
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+      const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));
+      const result=await Tesseract.recognize(blob,'deu',{logger:()=>{}});
+      return result.data.text;
+    }catch(e){return '';}
+  } else {
+    try{
+      const result=await Tesseract.recognize(file,'deu',{logger:()=>{}});
+      return result.data.text;
+    }catch(e){return '';}
+  }
+}
+
+function parseOcrText(text,type){
+  const mwstDef={de:19,at:20,ch:8.1};
+  const mwstStd=mwstDef[currentLand]||19;
+  const t=text;
+
+  // Datum erkennen
+  let dat='';
+  const datM=t.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})/);
+  if(datM){
+    const d=datM[1].padStart(2,'0'),m=datM[2].padStart(2,'0');
+    let y=datM[3];if(y.length===2)y='20'+y;
+    dat=`${d}.${m}.${y}`;
+  }
+
+  // Betrag erkennen (größter Betrag = Brutto)
+  const amounts=[];
+  const amtRx=/(\d{1,6}[.,]\d{2})\s*€?/g;
+  let am;
+  while((am=amtRx.exec(t))!==null){
+    const v=parseFloat(am[1].replace(',','.'));
+    if(v>0.5&&v<99999)amounts.push(v);
+  }
+  amounts.sort((a,b)=>b-a);
+  const brutto=amounts[0]||0;
+
+  // MwSt-Satz erkennen
+  let mwst=mwstStd;
+  const mwstM=t.match(/(19|20|7|10|13|8[.,]1|3[.,]8|2[.,]6)\s*%/);
+  if(mwstM)mwst=parseFloat(mwstM[1].replace(',','.'));
+  if(/steuerfrei|steuerbefreit|0\s*%|RC|Reverse/i.test(t))mwst=0;
+
+  // Netto berechnen
+  const netto=mwst>0?Math.round(brutto/(1+mwst/100)*100)/100:brutto;
+
+  // Lieferant/Händler/Kunde erkennen
+  let name='';
+  const lines=t.split(/\n/).map(l=>l.trim()).filter(l=>l.length>2);
+  for(const l of lines){
+    if(/[A-ZÄÖÜ]{2,}/.test(l)&&l.length>3&&l.length<60&&!/^\d/.test(l)){
+      name=l.replace(/[^a-zA-Z0-9äöüÄÖÜß\s&.\-,]/g,'').trim();
+      if(name.length>3)break;
+    }
+  }
+  if(!name&&lines.length>0)name=lines[0].slice(0,50);
+
+  // Rechnungsnummer erkennen
+  let rech='';
+  const rechM=t.match(/(?:Rechnungs(?:nummer|nr\.?|\-?nr)|Invoice\s*(?:No\.?|Nr\.?|#))\s*[:\-]?\s*([A-Z0-9\-\/]+)/i);
+  if(rechM)rech=rechM[1];
+
+  // Herkunft erkennen
+  let herk='inland',hint='';
+  if(/VAT|TVA|BTW|IVA|UID|USt-IdNr/i.test(t)&&!/Deutschland|Germany/i.test(t)){herk='eu';hint='EU-Auslandsrechnung — bitte Herkunft prüfen.';mwst=0;}
+  if(/China|USA|UK|United Kingdom|Großbritannien|Japan/i.test(t)){herk='drittland';hint='Drittland-Rechnung — bitte Herkunft und EUSt prüfen.';mwst=0;}
+
+  // Kategorie raten
+  const katMap=[
+    [/werkzeug|maschine|bohrmaschine|säge|flex|schrauber|gerät/i,'Werkzeug & Maschinen'],
+    [/fahrzeug|auto|kfz|reifen|tank|kraftstoff|diesel|benzin|parkhaus|parken/i,'Fahrzeug & Transport'],
+    [/büro|papier|drucker|tinte|porto|brief|stempel|telefon|internet|software|computer/i,'Büro & Verwaltung'],
+    [/essen|verpflegung|restaurant|café|brot|getränk|lebensmittel|supermarkt|rewe|edeka|lidl|aldi/i,'Verpflegung'],
+    [/krankenkasse|krankenversicherung|finanzamt|steuer|sozialversicherung|rentenversicherung|überweisung/i,'Überweisungen & Abgaben'],
+  ];
+  let kat='Material & Waren';
+  for(const [rx,k] of katMap){if(rx.test(t)){kat=k;break;}}
+  if(type!=='bar'&&kat==='Verpflegung')kat='Sonstiges';
+  if(type!=='ein'&&kat==='Überweisungen & Abgaben')kat='Sonstiges';
+
+  // Beschreibung
+  let desc='';
+  for(const l of lines){
+    if(l.toLowerCase()!==name.toLowerCase()&&l.length>5&&l.length<80&&!/^\d{1,2}[.\-\/]/.test(l)){
+      desc=l.slice(0,60);break;
+    }
+  }
+  if(!desc)desc=name.slice(0,60)||'Beleg';
+
+  if(type==='ein')return{dat,lief:name,desc,herk,netto,mwst,brutto,kat,hint};
+  if(type==='aus')return{dat,kund:name,desc,rech,netto,mwst,brutto,stat:'offen'};
+  if(type==='bar')return{dat,haend:name,desc,mwst,brutto,kat};
+  return{};
+}
 
 async function processFile(file,type){
-  if(!KEY){
-    showAlert('Kein API-Key eingerichtet — bitte links auf "Einstellungen" klicken und Key eintragen. Oder "+ Manuell" nutzen.','am');
-    return;
-  }
   document.getElementById('procBar').style.display='flex';
-  document.getElementById('procTxt').textContent=`"${file.name}" wird ausgelesen...`;
-  const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
-  const b64=await toB64(file);
+  document.getElementById('procTxt').textContent=`"${file.name}" wird lokal ausgelesen...`;
   const isPdf=file.type==='application/pdf',isImg=file.type.startsWith('image/');
-  if(!isPdf&&!isImg){document.getElementById('procBar').style.display='none';showAlert('Nur PDF oder Bild-Dateien (JPG, PNG).','am');return;}
-  const ci=isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'image',source:{type:'base64',media_type:file.type,data:b64}};
-  const mwstHint={de:'Erlaubte MwSt-Sätze: 0, 7, 19',at:'Erlaubte MwSt-Sätze: 0, 10, 13, 20',ch:'Erlaubte MwSt-Sätze: 0, 2.6, 3.8, 8.1'};
-  const mwstDef={de:19,at:20,ch:8.1};
-  const mwstInfo=mwstHint[currentLand]||mwstHint.de;
-  const mwstStd=mwstDef[currentLand]||19;
-  const prompts={
-    ein:`Lies diese Eingangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","lief":"Lieferant","desc":"max 60 Zeichen","herk":"inland","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren","hint":""}
-herk: inland=Inland, eu=EU-Ausland, drittland=China/USA/UK etc. Bei eu/drittland: mwst=0, hint=Steuerhinweis.
-${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!
-kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Überweisungen & Abgaben, Sonstiges`,
-    aus:`Lies diese Ausgangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","kund":"Kunde","desc":"Beschreibung","rech":"Rechnungsnr","netto":0.00,"mwst":${mwstStd},"brutto":0.00,"stat":"offen"}
-WICHTIG: kund = der EMPFÄNGER der Rechnung (die Firma/Person AN DIE die Rechnung geht). NICHT der Aussteller.
-${mwstInfo}. Lies den tatsächlichen MwSt-Satz von der Rechnung!`,
-    bar:`Lies diesen Kassenbon aus. Antworte NUR mit JSON ohne Backticks:
-{"dat":"TT.MM.JJJJ","haend":"Händler","desc":"Was wurde gekauft","mwst":${mwstStd},"brutto":0.00,"kat":"Material & Waren"}
-${mwstInfo}. Lies den tatsächlichen MwSt-Satz vom Bon!
-kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Verpflegung, Sonstiges`
-  };
+  if(!isPdf&&!isImg){document.getElementById('procBar').style.display='none';showAlert('Nur PDF-Dateien werden unterstützt.','am');return;}
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:[ci,{type:'text',text:prompts[type]}]}]})
-    });
-    const d=await res.json();
-    if(d.error)throw new Error(d.error.message);
-    const txt=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
-    const p=JSON.parse(txt);
+    const text=await extractTextFromFile(file);
+    if(!text||text.trim().length<10){document.getElementById('procBar').style.display='none';showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');return;}
+    const p=parseOcrText(text,type);
     p.id=++uid;p.mand=document.getElementById('mandSel').value||(D.mand[0]?.name||'');
-    // Duplikat-Erkennung
     const name=p.lief||p.kund||p.haend||'';
     const isDup=D[type].some(r=>{
       const rName=r.lief||r.kund||r.haend||'';
@@ -1187,13 +1252,12 @@ kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwa
     if(type==='aus')rAus();
     if(type==='bar')rBar();
     rDash();
-    showAlert(`✓ "${p.lief||p.kund||p.haend}" wurde eingetragen!`,'gn');
+    showAlert(`✓ "${name||'Beleg'}" wurde eingetragen! Bitte Felder prüfen und ggf. korrigieren.`,'gn');
   }catch(err){
-    if(err.message&&(err.message.includes('fetch')||err.message.includes('Network')||err.message.includes('CORS'))){
-      showAlert('Verbindung zu Anthropic fehlgeschlagen. Bitte prüfe deinen API-Key in den Einstellungen oder nutze "+ Manuell" zum Eintragen.','am');
-    }else{
-      showAlert('Konnte Rechnung nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
-    }
+    showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
+  }
+  document.getElementById('procBar').style.display='none';
+}
   }
   document.getElementById('procBar').style.display='none';
 }
@@ -1289,30 +1353,26 @@ function saveMnd(){
 
 // ── SETUP ─────────────────────────────────────────────────────────────────────
 function tKey(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
-function applyUser(name,beruf,key){
-  KEY=key||'';
+function applyUser(name,beruf){
   const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('uAv').textContent=ini;
   document.getElementById('uName').textContent=name;
   document.getElementById('uRole').textContent=beruf||'Handwerker';
-  document.getElementById('kiOn').style.display=key?'flex':'none';
-  document.getElementById('kiOff').style.display=key?'none':'flex';
 }
 function saveSetup(){
   const name=document.getElementById('sName').value.trim();
   if(!name){document.getElementById('sName').focus();showAlert('Bitte deinen Namen eingeben.','rd');return;}
   const beruf=document.getElementById('sBeruf').value.trim();
-  const key=document.getElementById('sKey').value.trim();
-  if(key&&!key.startsWith('sk-ant-')){showAlert('Der API-Key scheint ungültig zu sein. Er muss mit "sk-ant-" beginnen. Bitte nochmal kopieren.','rd');return;}
+
   const land=document.getElementById('sLand')?.value||'de';
-  localStorage.setItem('bp_n',name);localStorage.setItem('bp_b',beruf);localStorage.setItem('bp_k',key);
+  localStorage.setItem('bp_n',name);localStorage.setItem('bp_b',beruf);
   localStorage.setItem('bp_setup_done','1');
   localStorage.setItem('bp_land',land);
   if(land==='custom'){
     const raw=document.getElementById('customRateInput')?.value||'';
     if(raw)localStorage.setItem('bp_custom_rates',raw);
   }
-  applyUser(name,beruf,key);
+  applyUser(name,beruf);
   document.getElementById('setupScr').style.display='none';
   showAlert(`Willkommen ${name}! MIKU-BelegProfi ist bereit.`,'gn');
 }
@@ -1326,7 +1386,7 @@ function skipSetup(){
 function openSet(){
   document.getElementById('stN').value=localStorage.getItem('bp_n')||'';
   document.getElementById('stB').value=localStorage.getItem('bp_b')||'';
-  document.getElementById('stK').value=localStorage.getItem('bp_k')||'';
+
   const land=localStorage.getItem('bp_land')||'de';
   const sel=document.getElementById('stLand');
   if(sel)sel.value=land;
@@ -1343,12 +1403,9 @@ function applyLandSet(land){
 function savSet(){
   const name=document.getElementById('stN').value.trim();
   const beruf=document.getElementById('stB').value.trim();
-  const key=document.getElementById('stK').value.trim();
   const land=document.getElementById('stLand')?.value||'de';
-  if(key&&!key.startsWith('sk-ant-')){showAlert('Der API-Key scheint ungültig zu sein. Er muss mit "sk-ant-" beginnen.','rd');return;}
   if(name)localStorage.setItem('bp_n',name);
   if(beruf)localStorage.setItem('bp_b',beruf);
-  if(key)localStorage.setItem('bp_k',key);
   // Land & MwSt speichern und sofort anwenden
   applyLand(land);
   if(land==='custom'){
@@ -1356,7 +1413,7 @@ function savSet(){
     if(raw)localStorage.setItem('bp_custom_rates',raw);
     applyCustomRates(raw);
   }
-  applyUser(name||localStorage.getItem('bp_n')||'Handwerker',beruf,key||localStorage.getItem('bp_k')||'');
+  applyUser(name||localStorage.getItem('bp_n')||'Handwerker',beruf);
   closeOv('mSet');showAlert('Einstellungen gespeichert!','gn');
 }
 
@@ -1456,7 +1513,7 @@ function resetApp(){
   localStorage.removeItem('bp_setup_done');
   localStorage.removeItem('bp_n');
   localStorage.removeItem('bp_b');
-  localStorage.removeItem('bp_k');
+
   location.reload();
 }
 
@@ -1474,7 +1531,7 @@ function acceptPrivacy(){
   startApp();
 }
 function startApp(){
-  const n=localStorage.getItem('bp_n'),b=localStorage.getItem('bp_b')||'',k=localStorage.getItem('bp_k')||'';
+  const n=localStorage.getItem('bp_n'),b=localStorage.getItem('bp_b')||'';
   const setupDone=localStorage.getItem('bp_setup_done');
   // Init MwSt dropdowns
   const land=localStorage.getItem('bp_land')||'de';
@@ -1487,7 +1544,7 @@ function startApp(){
     fillMwDropdowns(MWST_RATES[land]||MWST_RATES.de);
   }
   if(n&&setupDone){
-    applyUser(n,b,k);
+    applyUser(n,b);
     document.getElementById('setupScr').style.display='none';
   }
   try{
@@ -1531,15 +1588,15 @@ function startApp(){
 
       <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">1. Erste Schritte</div>
       <div style="font-size:14px;color:#222;line-height:1.8;">
-        Beim ersten Start richtest du die App einmalig ein: <strong>Name, Beruf/Firma, Land</strong> (für die richtigen MwSt-Sätze) und optional deinen <strong>Claude API-Key</strong> für automatisches Auslesen von Rechnungen.<br>
-        Ohne API-Key kannst du alle Belege auch <strong>manuell</strong> eintragen: Klicke dazu in der Sidebar auf z.B. <strong>„Eingangsrechnungen“</strong> — dort findest du oben den Button <strong>„Manuell“</strong> zum direkten Eintragen.
+        Beim ersten Start richtest du die App einmalig ein: <strong>Name, Beruf/Firma, Land</strong> (für die richtigen MwSt-Sätze).<br>
+        Du kannst Belege per PDF hochladen (werden automatisch lokal ausgelesen) oder manuell eintragen: Klicke dazu in der Sidebar auf z.B. <strong>„Eingangsrechnungen“</strong> — dort findest du oben den Button <strong>„Manuell“</strong>.
       </div>
 
       <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">2. Eingangsrechnungen</div>
       <div style="font-size:14px;color:#222;line-height:1.8;">
         Hier trägst du alle <strong>Rechnungen die du bezahlst</strong> ein (Lieferanten, Material, Dienstleistungen).<br>
-        <strong>Mit API-Key:</strong> PDF oder Foto hochladen → KI liest automatisch aus.<br>
-        <strong>Ohne API-Key:</strong> Auf <strong>„+ Manuell“</strong> klicken und Daten selbst eingeben.<br>
+        <strong>PDF hochladen:</strong> Beleg wird direkt im Browser ausgelesen — lokal, kostenlos, ohne Cloud.<br>
+        <strong>Manuell:</strong> Auf <strong>„+ Manuell“</strong> klicken und Daten selbst eingeben.<br>
         Tipp: Herkunft angeben (Inland / EU / Drittland) — wichtig für den Steuerberater.
       </div>
 
@@ -1552,16 +1609,15 @@ function startApp(){
       <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">4. Barbelege &amp; Quittungen</div>
       <div style="font-size:14px;color:#222;line-height:1.8;">
         Für <strong>Kassenbelege und Quittungen</strong> die du bar bezahlt hast.<br>
-        Foto des Kassenbons hochladen (mit API-Key) oder manuell eintragen.<br>
+        PDF des Kassenbons hochladen oder manuell eintragen.<br>
         Kategorie wählen — z.B. Material, Verpflegung, Fahrzeug.
       </div>
 
-      <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">5. KI-Funktion (optional)</div>
+      <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">5. Automatisches Auslesen (100% lokal)</div>
       <div style="font-size:14px;color:#222;line-height:1.8;">
-        Mit einem <strong>Claude API-Key</strong> von Anthropic kannst du Rechnungen automatisch auslesen lassen.<br>
-        Kosten: ca. <strong>0,01–0,03 € pro Beleg</strong> über dein Anthropic-Konto.<br>
-        Den Key einrichten: <strong>Einstellungen</strong> → API-Key eintragen.<br>
-        <strong>Wichtig:</strong> Beim Upload werden Belegdaten an Anthropic (USA) übertragen. Du bist dafür selbst datenschutzrechtlich verantwortlich.
+        Die App liest PDFs direkt in deinem Browser aus — kein API-Key, keine Cloud, keine Kosten.<br>
+        Alle Daten bleiben auf deinem Computer. Nach dem Auslesen bitte die erkannten Felder kurz prüfen und ggf. korrigieren.<br>
+        <strong>Tipp:</strong> Digitale PDFs (z.B. von Online-Shops) werden besonders gut erkannt.
       </div>
 
       <div style="font-size:16px;font-weight:700;color:#111;margin:18px 0 8px 0;">6. Datensicherung</div>
