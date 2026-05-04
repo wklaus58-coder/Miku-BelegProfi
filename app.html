@@ -1199,37 +1199,17 @@ function parseOcrText(text,type){
   if(/China|USA|UK|United Kingdom|Großbritannien|Japan/i.test(t)){herk='drittland';hint='Drittland-Rechnung — bitte Herkunft und EUSt prüfen.';mwst=0;}
 
   // Zahlungsbeleg (Finom/Bank) erkennen
-  // Finom-Struktur (PDF.js liest Spalten getrennt, linke zuerst):
-  // ...ABSENDER / EMPFÄNGER / LuxLumenLED(Absender) / AOK Gesundheitskasse(Empfänger) / USt...
+  // PDF.js gibt aus: "...ABSENDER  LuxLumenLED  USt... IBAN... BIC...  EMPFÄNGER  AOK Gesundheitskasse  IBAN..."
+  // EMPFÄNGER steht direkt vor dem Empfänger-Namen (durch Leerzeichen getrennt, aber in einem Block)
   const isZahlungsbeleg=/zahlungsbeleg|created with finom/i.test(t);
   if(isZahlungsbeleg){
-    const tLines=t.split(/[\n\r]+/).map(l=>l.trim()).filter(l=>l.length>0);
-    // Strategie: ABSENDER-Zeile finden, dann den Namen danach merken (=Absender-Name),
-    // dann weitersuchen bis ein anderer Name kommt (=Empfänger)
-    let absenderName='';
-    let absenderIdx=-1;
-    for(let i=0;i<tLines.length;i++){
-      if(/^ABSENDER$/i.test(tLines[i])){absenderIdx=i;break;}
-    }
-    if(absenderIdx>=0){
-      // Absender-Name = erste nicht-leere Zeile nach ABSENDER die kein Keyword ist
-      for(let j=absenderIdx+1;j<Math.min(absenderIdx+5,tLines.length);j++){
-        const c=tLines[j];
-        if(c.length>2&&!/^EMPF/i.test(c)&&!/^IBAN/i.test(c)&&!/^BIC/i.test(c)&&!/^USt/i.test(c)){
-          absenderName=c;break;
-        }
-      }
-    }
-    // Empfänger-Name = erste nicht-leere Zeile nach EMPFÄNGER die NICHT der Absender-Name ist
-    for(let i=0;i<tLines.length;i++){
-      if(/^EMPF.NGER$/i.test(tLines[i])){
-        for(let j=i+1;j<Math.min(i+8,tLines.length);j++){
-          const cand=tLines[j];
-          if(cand.length>2&&!/^IBAN/i.test(cand)&&!/^BIC/i.test(cand)&&!/^USt/i.test(cand)&&!/^[A-Z]{2}\d{2}/.test(cand)&&cand!==absenderName){
-            name=cand.slice(0,50);break;
-          }
-        }
-        break;
+    // Empfänger: Text nach "EMPFÄNGER" bis zum nächsten IBAN/BIC
+    const empfRx=/EMPF.NGER\s+([^\n]+?)(?:\s+IBAN|\s+BIC|$)/i;
+    const empfM2=t.match(empfRx);
+    if(empfM2){
+      const cand=empfM2[1].trim();
+      if(cand.length>2&&!/^IBAN/i.test(cand)&&!/^BIC/i.test(cand)&&!/^[A-Z]{2}\d{2}/.test(cand)){
+        name=cand.slice(0,50);
       }
     }
     // Beschreibung aus "Beschreibung:" Zeile
