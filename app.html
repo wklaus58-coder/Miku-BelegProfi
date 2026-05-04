@@ -1198,31 +1198,28 @@ function parseOcrText(text,type){
   if(/VAT|TVA|BTW|IVA|UID|USt-IdNr/i.test(t)&&!/Deutschland|Germany/i.test(t)){herk='eu';hint='EU-Auslandsrechnung — bitte Herkunft prüfen.';mwst=0;}
   if(/China|USA|UK|United Kingdom|Großbritannien|Japan/i.test(t)){herk='drittland';hint='Drittland-Rechnung — bitte Herkunft und EUSt prüfen.';mwst=0;}
 
-  // Zahlungsbeleg (Finom/Bank) erkennen — Empfänger aus "Empfänger:" Zeile lesen
-  const isZahlungsbeleg=/zahlungsbeleg|kontoauszug|sepa.?überweisung|created with finom/i.test(t);
+  // Zahlungsbeleg (Finom/Bank) erkennen
+  // Finom-Struktur: Zeile 1=ZAHLUNGSBELEG, Zeile 5=Beschreibung:..., Zeile 6=ABSENDER EMPFÄNGER, Zeile 7=Name links | Name rechts
+  const isZahlungsbeleg=/zahlungsbeleg|created with finom/i.test(t);
   if(isZahlungsbeleg){
-    // Empfänger: Zeile finden — aber IBAN/BIC-Zeilen überspringen
-    const tLines=t.split(/[\n\r]+/).map(l=>l.trim()).filter(l=>l.length>1);
+    const tLines=t.split(/[\n\r]+/).map(l=>l.trim()).filter(l=>l.length>0);
+    // Empfänger: Zeile nach "ABSENDER...EMPFÄNGER" Header — rechte Spalte auslesen
     for(let i=0;i<tLines.length;i++){
-      if(/empfänger|empfaenger/i.test(tLines[i])){
-        // Nächste nicht-leere Zeile die keine IBAN/BIC ist
-        for(let j=i+1;j<Math.min(i+5,tLines.length);j++){
-          const cand=tLines[j].replace(/empfänger[:\-]?/i,'').trim();
-          if(cand.length>2&&!/^[A-Z]{2}\d{2}[\s\d]+$/.test(cand)&&!/^[A-Z]{6}[A-Z0-9]{2}/.test(cand)&&!/^BIC/i.test(cand)&&!/^IBAN/i.test(cand)){
-            name=cand.slice(0,50);break;
-          }
+      if(/ABSENDER.*EMPF.NGER|EMPF.NGER.*ABSENDER/i.test(tLines[i])){
+        // Nächste Zeile enthält: "LuxLumenLED    AOK Gesundheitskasse"
+        // Rechte Hälfte (nach Mitte) nehmen
+        const nextLine=tLines[i+1]||'';
+        const mid=Math.floor(nextLine.length/2);
+        const rightPart=nextLine.slice(mid).trim();
+        if(rightPart.length>2&&!/^IBAN/i.test(rightPart)&&!/^BIC/i.test(rightPart)){
+          name=rightPart.slice(0,50);
         }
-        if(name)break;
+        break;
       }
     }
-    // Fallback: Zeile nach "An:" suchen
-    if(!name){
-      const empfM=t.match(/(?:an\s*:)\s*([^\n\r]{3,50})/i);
-      if(empfM){const c=empfM[1].trim();if(!/^[A-Z]{2}\d/.test(c))name=c.slice(0,50);}
-    }
-    // Verwendungszweck als Beschreibung
-    const vzM=t.match(/(?:verwendungszweck|betreff|zweck)\s*[:\-]?\s*([^\n\r]{3,80})/i);
-    if(vzM)desc=vzM[1].trim().slice(0,60);
+    // Beschreibung aus "Beschreibung:" Zeile
+    const beschM=t.match(/Beschreibung:\s*([^\n\r]{5,100})/i);
+    if(beschM)desc=beschM[1].trim().slice(0,80);
     // MwSt = 0 bei Zahlungsbelegen
     mwst=0;
   }
