@@ -1198,15 +1198,27 @@ function parseOcrText(text,type){
   if(/VAT|TVA|BTW|IVA|UID|USt-IdNr/i.test(t)&&!/Deutschland|Germany/i.test(t)){herk='eu';hint='EU-Auslandsrechnung — bitte Herkunft prüfen.';mwst=0;}
   if(/China|USA|UK|United Kingdom|Großbritannien|Japan/i.test(t)){herk='drittland';hint='Drittland-Rechnung — bitte Herkunft und EUSt prüfen.';mwst=0;}
 
+  // Zahlungsbeleg (Finom/Bank) erkennen — Empfänger aus "Empfänger:" Zeile lesen
+  const isZahlungsbeleg=/zahlungsbeleg|kontoauszug|sepa.?überweisung|created with finom/i.test(t);
+  if(isZahlungsbeleg){
+    // Empfänger aus Zeile nach "Empfänger" oder "An" lesen
+    const empfM=t.match(/(?:empfänger|empfaenger|an\s*:)\s*[:\-]?\s*([^\n\r]{3,50})/i);
+    if(empfM&&empfM[1].trim().length>2)name=empfM[1].trim();
+    // Verwendungszweck als Beschreibung
+    const vzM=t.match(/(?:verwendungszweck|betreff|zweck)\s*[:\-]?\s*([^\n\r]{3,80})/i);
+    if(vzM)desc=vzM[1].trim().slice(0,60);
+    // MwSt = 0 bei Zahlungsbelegen
+    mwst=0;
+  }
   // Kategorie raten
   const katMap=[
     [/werkzeug|maschine|bohrmaschine|säge|flex|schrauber|gerät/i,'Werkzeug & Maschinen'],
     [/fahrzeug|auto|kfz|reifen|tank|kraftstoff|diesel|benzin|parkhaus|parken/i,'Fahrzeug & Transport'],
-    [/büro|papier|drucker|tinte|porto|brief|stempel|telefon|internet|software|computer/i,'Büro & Verwaltung'],
+    [/büro|papier|drucker|tinte|porto|brief|stempel|telefon|internet|software|computer|ionos|strato|hosting|domain/i,'Büro & Verwaltung'],
     [/essen|verpflegung|restaurant|café|brot|getränk|lebensmittel|supermarkt|rewe|edeka|lidl|aldi/i,'Verpflegung'],
-    [/krankenkasse|krankenversicherung|finanzamt|steuer|sozialversicherung|rentenversicherung|überweisung/i,'Überweisungen & Abgaben'],
+    [/krankenkasse|krankenversicherung|aok|tkk|barmer|dak|ikk|bkk|finanzamt|steuer|sozialversicherung|rentenversicherung|berufsgenossenschaft/i,'Überweisungen & Abgaben'],
   ];
-  let kat='Material & Waren';
+  let kat=isZahlungsbeleg?'Überweisungen & Abgaben':'Material & Waren';
   for(const [rx,k] of katMap){if(rx.test(t)){kat=k;break;}}
   if(type!=='bar'&&kat==='Verpflegung')kat='Sonstiges';
   if(type!=='ein'&&kat==='Überweisungen & Abgaben')kat='Sonstiges';
