@@ -216,9 +216,15 @@ tbody tr:hover td{background:var(--bg);}
 .prv-check input{width:20px;height:20px;cursor:pointer;accent-color:#0F6E3A;flex-shrink:0;margin-top:2px;}
 .prv-check label{font-size:15px;font-weight:700;color:#000;cursor:pointer;line-height:1.6;}
 .prv-check label span{font-size:13px;font-weight:500;color:#333;display:block;margin-top:4px;}
-#prvAccept{width:100%;padding:16px 24px;border-radius:10px;border:none;background:#ccc;color:#fff;font-size:17px;font-weight:700;cursor:not-allowed;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
-#prvAccept.active{background:#1B4FD8;cursor:pointer;}
-#prvAccept.active:hover{background:#1640b0;}
+.prv-consent-box{display:flex;flex-direction:column;gap:14px;}
+.prv-option{display:flex;align-items:flex-start;gap:16px;padding:18px 20px;border-radius:12px;cursor:pointer;transition:all 0.18s;border:2.5px solid transparent;}
+.prv-option-ki{background:#EFF4FF;border-color:#1B4FD8;}
+.prv-option-ki:hover{background:#dce8ff;border-color:#1640b0;}
+.prv-option-lokal{background:#F0FBF4;border-color:#0F6E3A;}
+.prv-option-lokal:hover{background:#d9f5e5;border-color:#0a5a2f;}
+.prv-option-icon{font-size:28px;flex-shrink:0;margin-top:2px;}
+.prv-option-text strong{display:block;font-size:16px;font-weight:700;color:#000;margin-bottom:5px;}
+.prv-option-text span{font-size:13px;color:#333;line-height:1.6;}
 
 .ie{padding:3px 6px;border:1px solid var(--bl);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sur);color:var(--tx);width:100%;min-width:60px;}
 .ie:focus{outline:none;box-shadow:0 0 0 2px rgba(27,79,216,0.18);}
@@ -478,21 +484,22 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       <p>Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf anzupassen. Die aktuelle Fassung ist in der App abrufbar.</p>
     </div>
     <div class="prv-footer">
-      <div class="prv-checks">
-        <div class="prv-check">
-          <input type="checkbox" id="prvCb1" onchange="checkPrvReady()">
-          <label for="prvCb1">Ich habe die Datenschutzerklärung gelesen und akzeptiere diese.
-            <span>Pflichtfeld zur Nutzung der App.</span>
-          </label>
+      <div class="prv-consent-box">
+        <div class="prv-option prv-option-ki" onclick="acceptPrivacyKI()">
+          <div class="prv-option-icon">🤖</div>
+          <div class="prv-option-text">
+            <strong>Zustimmen &amp; KI-Automatik nutzen</strong>
+            <span>Ich willige ein, dass die für die KI-Auswertung erforderlichen Belegdaten an Anthropic übermittelt und dort zur automatisierten Auswertung verarbeitet werden.</span>
+          </div>
         </div>
-        <div class="prv-check">
-          <input type="checkbox" id="prvCb2" onchange="checkPrvReady()" checked>
-          <label for="prvCb2">Ich verstehe, dass alle meine Belegdaten ausschließlich lokal in meinem Browser verarbeitet werden und keine Daten an externe Server übertragen werden.
-            <span>Deine Daten verlassen niemals deinen Computer.</span>
-          </label>
+        <div class="prv-option prv-option-lokal" onclick="acceptPrivacyLokal()">
+          <div class="prv-option-icon">🔒</div>
+          <div class="prv-option-text">
+            <strong>Ohne KI-Automatik fortfahren</strong>
+            <span>Ich nutze die App ohne KI-Automatik. Meine Belegdaten werden im Rahmen der Grundfunktionen nicht an Anthropic übermittelt.</span>
+          </div>
         </div>
       </div>
-      <button id="prvAccept" disabled onclick="acceptPrivacy()">Zustimmen und weiter →</button>
     </div>
   </div>
 </div>
@@ -534,7 +541,8 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
   <div class="topbar">
     <div class="ptitle" id="pgTitle">Dashboard</div>
     <div class="tright">
-      <div class="kib ki-on" style="display:flex"><div class="kdot"></div> 🔒 Lokal &amp; DSGVO-sicher</div>
+      <div class="kib ki-on" id="kiOn" style="display:none"><div class="kdot"></div> 🤖 KI-Automatik aktiv</div>
+      <div class="kib ki-off" id="kiOff" style="display:flex" onclick="openSet()"><div class="kdot"></div> 🔒 Lokal &amp; DSGVO-sicher</div>
       <select class="fi" id="mandSel" style="width:170px;font-size:12px" onchange="rDash()">
         <option value="">Alle Mandanten</option>
       </select>
@@ -866,13 +874,24 @@ ${sst.map(s=>`<si><t xml:space="preserve">${xmlEsc(s)}</t></si>`).join('')}
       </div>
 
     </div>
+    <div class="fg" style="margin-top:0;padding-top:0;">
+      <div class="fgp full" id="kiSetSection">
+        <label class="flbl">🤖 Claude API-Key (für KI-Automatik)</label>
+        <div style="display:flex;gap:8px;">
+          <input class="fi" id="stK" placeholder="sk-ant-..." type="password" style="flex:1;font-family:monospace;font-size:12px;">
+          <button class="btn btn-sm" onclick="tKey('stK')">Zeigen</button>
+        </div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px;">console.anthropic.com → API keys → Create Key &nbsp;·&nbsp; ca. 0,01–0,03 € pro Beleg</div>
+        <div id="kiConsentStatus" style="margin-top:8px;padding:10px 14px;border-radius:8px;font-size:13px;"></div>
+      </div>
+    </div>
     <div class="mf"><button class="btn" onclick="closeOv('mSet')">Abbrechen</button><button class="btn btn-bl" onclick="savSet()">Speichern</button></div><div style="margin-top:10px;"><button class="btn" style="background:#fff3f3;color:#c0392b;border:1.5px solid #e74c3c;font-size:13px;width:100%;" onclick="resetApp()">&#x21BA; Einrichtung zurücksetzen (Datenschutz &amp; Setup neu starten)</button></div>
   </div>
 </div>
 
 <script>
 // ── DATEN ────────────────────────────────────────────────────────────────────
-let uid=100, dF='alle', eF='alle';
+let KEY='', uid=100, dF='alle', eF='alle';
 let SS={ein:{c:'dat',d:-1},aus:{c:'dat',d:-1},bar:{c:'dat',d:-1},dash:{c:'dat',d:-1}};
 let D={
   ein:[],
@@ -1196,13 +1215,17 @@ function parseOcrText(text,type){
     dat=`${d}.${m}.${y}`;
   }
 
-  // ── 3. BETRAG ─────────────────────────────────────────────────────────────
+  // ── 3. BETRAG ─────────────  // ── 3. BETRAG ────────────────────────────────────────────────
   let brutto=0;
-  const bm=t.match(/(?:Brutto|Gesamt|Total|Gesamtbetrag|Rechnungsbetrag|Summe)\s*:?\s*(\d{1,6}[.,]\d{2})\s*€?/i);
-  if(bm){brutto=parseFloat(bm[1].replace(',','.'));}
+  // Priorität 1: "Gesamt inkl. MwSt." gefolgt von Betrag (auch wenn Text dazwischen)
+  const bm1=t.match(/(?:Gesamt\s+inkl\.?\s+MwSt\.?|Rechnungsbetrag|Gesamtbetrag|Total\s+inkl)[^\d]{0,30}([\d]{1,6}[.,]\d{2})\s*(?:EUR|€)?/i);
+  // Priorität 2: Betrag direkt vor EUR (letztes Vorkommen = Gesamtbetrag)
+  const bm3all=t.match(/([\d]{1,6}[.,]\d{2})\s*EUR/gi);
+  if(bm1){brutto=parseFloat(bm1[1].replace(',','.'));}
+  else if(bm3all){const last=bm3all[bm3all.length-1];const vm=last.match(/([\d.,]+)/);if(vm)brutto=parseFloat(vm[1].replace(',','.'));}
   else{
     const amounts=[];
-    const amtRx=/(\d{1,6}[.,]\d{2})\s*€/g;let am;
+    const amtRx=/([\d]{1,6}[.,]\d{2})\s*€/g;let am;
     while((am=amtRx.exec(t))!==null){const v=parseFloat(am[1].replace(',','.'));if(v>0.5&&v<99999)amounts.push(v);}
     if(amounts.length)brutto=Math.max(...amounts);
   }
@@ -1221,9 +1244,11 @@ function parseOcrText(text,type){
   const nmM=t.match(/(?:Lieferant|Absender|Von|Firma|Kunde|An)\s*:?\s*([A-ZÄÖÜ][^\n]{3,50})/i);
   if(nmM)name=nmM[1].trim().slice(0,50);
   if(!name){
-    const skip=/^(rechnung|invoice|quittung|datum|betreff|bestellung|lieferung|mwst|ust|netto|brutto|gesamt|total|iban|bic|sepa|zahlung|zahlbar|fällig|seite|page|\d)/i;
+    const skip=/^(rechnung|invoice|quittung|datum|betreff|bestellung|lieferung|mwst|ust|netto|brutto|gesamt|total|iban|bic|sepa|zahlung|zahlbar|fällig|seite|page|nr\.|nr |ref\.|ref |powered|www\.|http|ins\.|\d)/i;
+    // Rechnungsnummern überspringen (z.B. F55-8972, R-595-2025)
+    const skipRechNr=/^[A-Z]{0,3}\d{2,}[\-\/]\d/;
     for(const l of lines.slice(0,15)){
-      if(!skip.test(l)&&l.length>3&&l.length<60&&!/^\d/.test(l)){name=l.slice(0,50);break;}
+      if(!skip.test(l)&&!skipRechNr.test(l)&&l.length>3&&l.length<60&&!/^\d/.test(l)){name=l.slice(0,50);break;}
     }
   }
   if(!name&&lines.length)name=lines[0].slice(0,50);
@@ -1245,7 +1270,7 @@ function parseOcrText(text,type){
   let herk='inland',hint='';
   if(/China|USA|United\s*States|\bUK\b|United\s*Kingdom|Großbritannien|Japan|Kanada|Australien/i.test(t)){
     herk='drittland';hint='Drittland-Rechnung — bitte Herkunft und EUSt prüfen.';mwst=0;
-  }else if(/\bVAT\b|\bTVA\b|\bBTW\b|\bIVA\b|\bUID\b/i.test(t)&&!/Deutschland|Germany|DE\d{9}/i.test(t)){
+  }else if((/\bVAT\b|\bTVA\b|\bBTW\b|\bIVA\b|\bUID\b/i.test(t)||/USt-IdNr\.?\s*[A-Z]{2}[A-Z0-9]/i.test(t))&&!/Deutschland|Germany|DE\d{9}/i.test(t)){
     herk='eu';hint='EU-Auslandsrechnung — bitte Herkunft prüfen.';mwst=0;
   }
 
@@ -1343,15 +1368,47 @@ function cancelRow(type,id){
   if(type==='bar')rBar();
 }
 
+async function callClaudeKI(file,type){
+  const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+  const b64=await toB64(file);
+  const isPdf=file.type==='application/pdf';
+  const ci=isPdf?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'image',source:{type:'base64',media_type:file.type,data:b64}};
+  const prompts={
+    ein:`Lies diese Eingangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
+{"dat":"TT.MM.JJJJ","lief":"Lieferant","desc":"max 60 Zeichen","herk":"inland","netto":0.00,"mwst":19,"brutto":0.00,"kat":"Material & Waren","hint":""}
+herk: inland=Deutschland, eu=EU-Ausland, drittland=China/USA/UK etc. Bei eu/drittland: mwst=0, hint=Steuerhinweis.
+kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Überweisungen & Abgaben, Sonstiges`,
+    aus:`Lies diese Ausgangsrechnung aus. Antworte NUR mit JSON ohne Backticks:
+{"dat":"TT.MM.JJJJ","kund":"Kunde","desc":"Beschreibung","rech":"Rechnungsnr","netto":0.00,"mwst":19,"brutto":0.00,"stat":"offen"}`,
+    bar:`Lies diesen Kassenbon aus. Antworte NUR mit JSON ohne Backticks:
+{"dat":"TT.MM.JJJJ","haend":"Händler","desc":"Was wurde gekauft","mwst":19,"brutto":0.00,"kat":"Material & Waren"}
+kat: Material & Waren, Werkzeug & Maschinen, Fahrzeug & Transport, Büro & Verwaltung, Verpflegung, Sonstiges`
+  };
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':KEY,'anthropic-version':'2023-06-01'},
+    body:JSON.stringify({model:'claude-opus-4-5',max_tokens:400,messages:[{role:'user',content:[ci,{type:'text',text:prompts[type]}]}]})
+  });
+  const d=await res.json();
+  if(d.error)throw new Error(d.error.message);
+  const txt=d.content.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(txt);
+}
 async function processFile(file,type){
   document.getElementById('procBar').style.display='flex';
-  document.getElementById('procTxt').textContent=`"${file.name}" wird lokal ausgelesen...`;
+  const useKI=!!(KEY&&localStorage.getItem('bp_ki_consent')==='1');
+  document.getElementById('procTxt').textContent=`"${file.name}" wird ${useKI?'mit KI':'lokal'} ausgelesen...`;
   const isPdf=file.type==='application/pdf',isImg=file.type.startsWith('image/');
   if(!isPdf&&!isImg){document.getElementById('procBar').style.display='none';showAlert('Nur PDF-Dateien werden unterstützt.','am');return;}
   try{
-    const text=await extractTextFromFile(file);
-    if(!text||text.trim().length<10){document.getElementById('procBar').style.display='none';showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');return;}
-    const p=parseOcrText(text,type);
+    let p;
+    if(useKI){
+      p=await callClaudeKI(file,type);
+    } else {
+      const text=await extractTextFromFile(file);
+      if(!text||text.trim().length<10){document.getElementById('procBar').style.display='none';showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');return;}
+      p=parseOcrText(text,type);
+    }
     p.id=++uid;p.mand=document.getElementById('mandSel').value||(D.mand[0]?.name||'');
     const name=p.lief||p.kund||p.haend||'';
     const isDup=D[type].some(r=>{
@@ -1371,7 +1428,11 @@ async function processFile(file,type){
     rDash();
     showAlert(`✓ "${name||'Beleg'}" wurde eingetragen! Bitte Felder prüfen und ggf. korrigieren.`,'gn');
   }catch(err){
-    showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
+    if(useKI&&err.message&&(err.message.includes('fetch')||err.message.includes('Network')||err.message.includes('CORS')||err.message.includes('401'))){
+      showAlert('Verbindung zu Anthropic fehlgeschlagen. Bitte API-Key in den Einstellungen prüfen oder "+ Manuell" nutzen.','am');
+    } else {
+      showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
+    }
   }
   document.getElementById('procBar').style.display='none';
 }
@@ -1467,11 +1528,15 @@ function saveMnd(){
 
 // ── SETUP ─────────────────────────────────────────────────────────────────────
 function tKey(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
-function applyUser(name,beruf){
+function applyUser(name,beruf,key){
+  KEY=key||'';
   const ini=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('uAv').textContent=ini;
   document.getElementById('uName').textContent=name;
   document.getElementById('uRole').textContent=beruf||'Handwerker';
+  const kiActive=!!(KEY&&localStorage.getItem('bp_ki_consent')==='1');
+  document.getElementById('kiOn').style.display=kiActive?'flex':'none';
+  document.getElementById('kiOff').style.display=kiActive?'none':'flex';
 }
 function saveSetup(){
   const name=document.getElementById('sName').value.trim();
@@ -1497,9 +1562,31 @@ function skipSetup(){
   applyUser(name,'','');
   document.getElementById('setupScr').style.display='none';
 }
+function revokeKI(){
+  localStorage.removeItem('bp_ki_consent');
+  KEY='';
+  localStorage.removeItem('bp_k');
+  const stK=document.getElementById('stK');if(stK)stK.value='';
+  applyUser(localStorage.getItem('bp_n')||'Handwerker',localStorage.getItem('bp_b')||'','');
+  openSet();
+  showAlert('KI-Einwilligung widerrufen. Lokaler Modus aktiv.','gn');
+}
 function openSet(){
   document.getElementById('stN').value=localStorage.getItem('bp_n')||'';
   document.getElementById('stB').value=localStorage.getItem('bp_b')||'';
+  const stK=document.getElementById('stK');if(stK)stK.value=localStorage.getItem('bp_k')||'';
+  // KI-Consent-Status anzeigen
+  const cs=document.getElementById('kiConsentStatus');
+  if(cs){
+    const consent=localStorage.getItem('bp_ki_consent')==='1';
+    if(consent){
+      cs.style.background='#EFF4FF';cs.style.border='1.5px solid #1B4FD8';cs.style.color='#1B4FD8';
+      cs.innerHTML='🤖 <strong>KI-Einwilligung aktiv</strong> — Belegdaten werden an Anthropic übertragen.<br><button class="btn" style="margin-top:8px;font-size:12px;background:#fff3f3;color:#c0392b;border:1.5px solid #e74c3c;" onclick="revokeKI()">Einwilligung widerrufen</button>';
+    } else {
+      cs.style.background='#F0FBF4';cs.style.border='1.5px solid #0F6E3A';cs.style.color='#0F6E3A';
+      cs.innerHTML='🔒 <strong>Lokaler Modus</strong> — Keine Daten werden an Anthropic übertragen.<br><small style="color:#333;">API-Key eingeben und speichern, um KI-Automatik zu aktivieren.</small>';
+    }
+  }
 
   const land=localStorage.getItem('bp_land')||'de';
   const sel=document.getElementById('stLand');
@@ -1518,8 +1605,10 @@ function savSet(){
   const name=document.getElementById('stN').value.trim();
   const beruf=document.getElementById('stB').value.trim();
   const land=document.getElementById('stLand')?.value||'de';
+  const stK=document.getElementById('stK');const key=stK?stK.value.trim():'';
   if(name)localStorage.setItem('bp_n',name);
   if(beruf)localStorage.setItem('bp_b',beruf);
+  if(key)localStorage.setItem('bp_k',key);
   // Land & MwSt speichern und sofort anwenden
   applyLand(land);
   if(land==='custom'){
@@ -1527,7 +1616,21 @@ function savSet(){
     if(raw)localStorage.setItem('bp_custom_rates',raw);
     applyCustomRates(raw);
   }
-  applyUser(name||localStorage.getItem('bp_n')||'Handwerker',beruf);
+  const finalKey=key||localStorage.getItem('bp_k')||'';
+  // Wenn KI-Consent vorhanden und Key gesetzt: KI aktiv; wenn Key leer: Consent entfernen
+  if(!finalKey){
+    localStorage.removeItem('bp_ki_consent');
+  } else if(finalKey&&localStorage.getItem('bp_ki_consent')!=='1'){
+    // Key neu eingetragen ohne Consent: Consent-Dialog anzeigen
+    if(confirm('Du hast einen API-Key eingegeben.\n\nDamit werden Belegdaten zur Auswertung an Anthropic (USA) übertragen.\n\nEinwilligung erteilen und KI-Automatik aktivieren?')){
+      localStorage.setItem('bp_ki_consent','1');
+    } else {
+      localStorage.removeItem('bp_k');
+      localStorage.removeItem('bp_ki_consent');
+      const stK2=document.getElementById('stK');if(stK2)stK2.value='';
+    }
+  }
+  applyUser(name||localStorage.getItem('bp_n')||'Handwerker',beruf,localStorage.getItem('bp_ki_consent')==='1'?localStorage.getItem('bp_k')||'':'');
   closeOv('mSet');showAlert('Einstellungen gespeichert!','gn');
 }
 
@@ -1624,28 +1727,30 @@ function loadData(e){
 function resetApp(){
   if(!confirm('Einrichtung zurücksetzen? Die App startet neu mit Datenschutz & Setup. Deine Belegdaten bleiben erhalten.'))return;
   localStorage.removeItem('bp_privacy_ok');
+  localStorage.removeItem('bp_ki_consent');
   localStorage.removeItem('bp_setup_done');
   localStorage.removeItem('bp_n');
   localStorage.removeItem('bp_b');
+  localStorage.removeItem('bp_k');
 
   location.reload();
 }
 
 // ── PRIVACY & SPLASH ──────────────────────────────────────────────────────
-function checkPrvReady(){
-  const ok=document.getElementById('prvCb1').checked&&document.getElementById('prvCb2').checked;
-  const btn=document.getElementById('prvAccept');
-  btn.disabled=!ok;
-  btn.classList.toggle('active',ok);
-}
-function acceptPrivacy(){
-  if(!document.getElementById('prvCb1').checked||!document.getElementById('prvCb2').checked)return;
+function acceptPrivacyKI(){
   localStorage.setItem('bp_privacy_ok','1');
+  localStorage.setItem('bp_ki_consent','1');
+  document.getElementById('privacyScr').style.display='none';
+  startApp();
+}
+function acceptPrivacyLokal(){
+  localStorage.setItem('bp_privacy_ok','1');
+  localStorage.removeItem('bp_ki_consent');
   document.getElementById('privacyScr').style.display='none';
   startApp();
 }
 function startApp(){
-  const n=localStorage.getItem('bp_n'),b=localStorage.getItem('bp_b')||'';
+  const n=localStorage.getItem('bp_n'),b=localStorage.getItem('bp_b')||'',k=localStorage.getItem('bp_k')||'';
   const setupDone=localStorage.getItem('bp_setup_done');
   // Init MwSt dropdowns
   const land=localStorage.getItem('bp_land')||'de';
@@ -1658,7 +1763,7 @@ function startApp(){
     fillMwDropdowns(MWST_RATES[land]||MWST_RATES.de);
   }
   if(n&&setupDone){
-    applyUser(n,b);
+    applyUser(n,b,k);
     document.getElementById('setupScr').style.display='none';
   }
   try{
