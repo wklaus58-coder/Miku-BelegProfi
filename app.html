@@ -1157,14 +1157,28 @@ function parseOcrText(text,type){
   // ── 1. FINOM ZAHLUNGSBELEG ────────────────────────────────────────────────
   if(/zahlungsbeleg|created with finom/i.test(t)){
     let dat='',brutto=0,name='',desc='';
+    // Datum
     const dm=t.match(/(?:Abgeschlossen|Get.tigt)\s+am:\s*(\d{1,2}\.\d{1,2}\.\d{4})/i);
     if(dm)dat=dm[1];
-    const bm=t.match(/[–\-]\s*(\d{1,6}[.,]\d{2})\s*EUR/i);
+    // Betrag (– 286,00 EUR)
+    const bm=t.match(/[–\-]\s*([\d.,]+)\s*EUR/i);
     if(bm)brutto=parseFloat(bm[1].replace(',','.'));
-    const em=t.match(/EMPF.NGER\s+(.+?)(?:\s+IBAN|\s+BIC|\s+USt\.)/i);
-    if(em){const c=em[1].trim();if(c.length>2&&!/^IBAN|^BIC|^[A-Z]{2}\d{2}/i.test(c))name=c.slice(0,50);}
-    const dm2=t.match(/Beschreibung:\s*(.{5,100}?)(?:\s{2,}|ABSENDER|$)/i);
-    if(dm2)desc=dm2[1].trim().slice(0,80);
+    // Empfänger: PDF.js gibt Zeilen zurück — nach EMPFÄNGER kommt Absender-Name, dann Empfänger-Name
+    const tLines=t.split(/\n/).map(l=>l.trim()).filter(l=>l.length>1);
+    const empfIdx=tLines.findIndex(l=>/EMPF.NGER/i.test(l));
+    if(empfIdx>=0&&empfIdx+2<tLines.length){
+      // Zeile nach EMPFÄNGER = Absender-Name (überspringen), 2. Zeile = Empfänger
+      const candidate=tLines[empfIdx+2];
+      if(candidate&&!/^IBAN|^BIC|^USt|^DE\d{2}/i.test(candidate))name=candidate.slice(0,60);
+    }
+    // Fallback: alles zwischen EMPFÄNGER und IBAN durchsuchen
+    if(!name){
+      const em=t.match(/EMPF.NGER[\s\S]{1,80}?([A-ZÄÖÜ][a-zäöüA-ZÄÖÜ\s&\-\.]{3,40})(?:\s+IBAN|\s+BIC)/i);
+      if(em)name=em[1].trim().slice(0,50);
+    }
+    // Beschreibung
+    const dm2=t.match(/Beschreibung:\s*(.{5,120}?)(?:\n|ABSENDER|$)/i);
+    if(dm2)desc=dm2[1].trim().slice(0,100);
     if(!desc)desc=name;
     if(type==='ein')return{dat,lief:name,desc,herk:'inland',netto:brutto,mwst:0,brutto,kat:'Überweisungen & Abgaben',hint:'',rech:''};
     if(type==='aus')return{dat,kund:name,desc,rech:'',netto:brutto,mwst:0,brutto,stat:'offen'};
@@ -1294,25 +1308,27 @@ function editRow(type,id){
 }
 function saveRow(type,id){
   const r=D[type].find(x=>x.id===id);if(!r)return;
-  const g=k=>document.getElementById(`ie-${k}-${id}`)?.value;
+  const el=k=>document.getElementById(`ie-${k}-${id}`);
+  const g=k=>{const e=el(k);return e?e.value:undefined;};
+  const gf=k=>{const v=g(k);return(v!==undefined&&v!=='')?(parseFloat(v)||0):undefined;};
   if(type==='ein'){
-    if(g('lief'))r.lief=g('lief');
-    if(g('desc'))r.desc=g('desc');
-    if(g('netto')!==null)r.netto=parseFloat(g('netto'))||0;
-    if(g('brutto')!==null)r.brutto=parseFloat(g('brutto'))||0;
-    if(g('kat'))r.kat=g('kat');
+    const lief=g('lief');if(lief!==undefined)r.lief=lief;
+    const desc=g('desc');if(desc!==undefined)r.desc=desc;
+    const netto=gf('netto');if(netto!==undefined)r.netto=netto;
+    const brutto=gf('brutto');if(brutto!==undefined)r.brutto=brutto;
+    const kat=g('kat');if(kat)r.kat=kat;
   }else if(type==='aus'){
-    if(g('kund'))r.kund=g('kund');
-    if(g('desc'))r.desc=g('desc');
-    if(g('rech')!==null)r.rech=g('rech');
-    if(g('netto')!==null)r.netto=parseFloat(g('netto'))||0;
-    if(g('brutto')!==null)r.brutto=parseFloat(g('brutto'))||0;
-    if(g('stat'))r.stat=g('stat');
+    const kund=g('kund');if(kund!==undefined)r.kund=kund;
+    const desc=g('desc');if(desc!==undefined)r.desc=desc;
+    const rech=g('rech');if(rech!==undefined)r.rech=rech;
+    const netto=gf('netto');if(netto!==undefined)r.netto=netto;
+    const brutto=gf('brutto');if(brutto!==undefined)r.brutto=brutto;
+    const stat=g('stat');if(stat)r.stat=stat;
   }else if(type==='bar'){
-    if(g('haend'))r.haend=g('haend');
-    if(g('desc'))r.desc=g('desc');
-    if(g('brutto')!==null)r.brutto=parseFloat(g('brutto'))||0;
-    if(g('kat'))r.kat=g('kat');
+    const haend=g('haend');if(haend!==undefined)r.haend=haend;
+    const desc=g('desc');if(desc!==undefined)r.desc=desc;
+    const brutto=gf('brutto');if(brutto!==undefined)r.brutto=brutto;
+    const kat=g('kat');if(kat)r.kat=kat;
   }
   autoSave();
   if(type==='ein')rEin();
