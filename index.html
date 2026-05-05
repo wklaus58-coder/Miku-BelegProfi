@@ -1406,7 +1406,7 @@ async function processFile(file,type){
       p=await callClaudeKI(file,type);
     } else {
       const text=await extractTextFromFile(file);
-      if(!text||text.trim().length<10){document.getElementById('procBar').style.display='none';showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');return;}
+      if(!text||text.trim().length<10){document.getElementById('procBar').style.display='none';showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');return;}
       p=parseOcrText(text,type);
     }
     p.id=++uid;p.mand=document.getElementById('mandSel').value||(D.mand[0]?.name||'');
@@ -1429,9 +1429,9 @@ async function processFile(file,type){
     showAlert(`✓ "${name||'Beleg'}" wurde eingetragen! Bitte Felder prüfen und ggf. korrigieren.`,'gn');
   }catch(err){
     if(useKI&&err.message&&(err.message.includes('fetch')||err.message.includes('Network')||err.message.includes('CORS')||err.message.includes('401'))){
-      showAlert('Verbindung zu Anthropic fehlgeschlagen. Bitte API-Key in den Einstellungen prüfen oder "+ Manuell" nutzen.','am');
+      showAlert('Verbindung zu Anthropic fehlgeschlagen. Bitte API-Key in den Einstellungen prüfen oder "+ Manuell" nutzen.','am');
     } else {
-      showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
+      showAlert('Konnte Beleg nicht auslesen. Bitte über "+ Manuell" eingeben.','am');
     }
   }
   document.getElementById('procBar').style.display='none';
